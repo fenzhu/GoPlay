@@ -1,3 +1,3 @@
 # Install
-export PATH=$PATH:/home/username/go/bin
-go install
+- export PATH=$PATH:/home/username/go/bin
+- go install
