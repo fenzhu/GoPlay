@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"example/greetings"
@@ -16,5 +15,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println(messages)
+	log.Print(messages)
+	// fmt.Println(messages)
 }
