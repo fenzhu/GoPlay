@@ -92,6 +92,7 @@ func types() {
 	wc.Test(mapExercise)
 
 	closure()
+	closureExercise()
 
 	fmt.Printf("\n")
 }
@@ -139,5 +140,23 @@ func closure() {
 	pos, neg := adder(), adder()
 	for i := 0; i < 10; i++ {
 		fmt.Println(pos(i), neg(-2*i))
+	}
+}
+
+func fibonacci() func() int {
+	past := 0
+	cur := 1
+	return func() int {
+		res := past
+		past = cur
+		cur += res
+		return res
+	}
+}
+
+func closureExercise() {
+	f := fibonacci()
+	for i := 0; i < 10; i++ {
+		fmt.Println(f())
 	}
 }
