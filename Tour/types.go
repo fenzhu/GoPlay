@@ -2,6 +2,10 @@ package main
 
 import (
 	"fmt"
+	"strings"
+
+	"golang.org/x/tour/pic"
+	"golang.org/x/tour/wc"
 )
 
 type Vertex struct {
@@ -85,6 +89,8 @@ func types() {
 	v, mok := m["b"]
 	fmt.Println(v, mok)
 
+	wc.Test(mapExercise)
+
 	fmt.Printf("\n")
 }
 
@@ -95,7 +101,7 @@ func printSlice(s []int) {
 }
 
 func sliceExercise() {
-	// pic.Show(myPic)
+	pic.Show(myPic)
 }
 
 func myPic(dx, dy int) [][]uint8 {
@@ -107,4 +113,14 @@ func myPic(dx, dy int) [][]uint8 {
 		}
 	}
 	return image
+}
+
+func mapExercise(s string) map[string]int {
+	m := make(map[string]int)
+	words := strings.Fields(s)
+	for _, w := range words {
+		m[w] += 1
+	}
+
+	return m
 }
