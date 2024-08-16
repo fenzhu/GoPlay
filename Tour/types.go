@@ -91,6 +91,8 @@ func types() {
 
 	wc.Test(mapExercise)
 
+	closure()
+
 	fmt.Printf("\n")
 }
 
@@ -123,4 +125,19 @@ func mapExercise(s string) map[string]int {
 	}
 
 	return m
+}
+
+func adder() func(int) int {
+	sum := 0
+	return func(x int) int {
+		sum += x
+		return sum
+	}
+}
+
+func closure() {
+	pos, neg := adder(), adder()
+	for i := 0; i < 10; i++ {
+		fmt.Println(pos(i), neg(-2*i))
+	}
 }
