@@ -48,6 +48,8 @@ func flow() {
 
 	defer_func()
 	defer_stack()
+
+	fmt.Printf("\n")
 }
 
 func sqrt(x float64) string {
