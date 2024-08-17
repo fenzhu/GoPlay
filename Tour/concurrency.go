@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"golang.org/x/tour/tree"
@@ -56,6 +57,14 @@ func concurrency() {
 
 	fmt.Println(Same(tree.New(1), tree.New(1)))
 	fmt.Println(Same(tree.New(1), tree.New(2)))
+
+	counter := SafeCounter{v: make(map[string]int)}
+	for i := 0; i < 1000; i++ {
+		go counter.Inc("somekey")
+	}
+
+	time.Sleep(time.Second)
+	fmt.Println(counter.Value("somekey"))
 }
 
 func say(s string) {
@@ -142,4 +151,22 @@ func Same(t1, t2 *tree.Tree) bool {
 		}
 	}
 	return true
+}
+
+type SafeCounter struct {
+	mu sync.Mutex
+	v  map[string]int
+}
+
+func (c *SafeCounter) Inc(key string) {
+	c.mu.Lock()
+	c.v[key]++
+	c.mu.Unlock()
+}
+
+func (c *SafeCounter) Value(key string) int {
+	c.mu.Lock()
+
+	defer c.mu.Unlock()
+	return c.v[key]
 }
