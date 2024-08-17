@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"image"
+	"image/color"
 	"io"
 	"math"
 	"os"
@@ -10,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/tour/pic"
 	"golang.org/x/tour/reader"
 )
 
@@ -66,6 +69,9 @@ func method() {
 	s13 := strings.NewReader("Lbh penpxrq gur pbqr!")
 	r13 := rot13Reader{s13}
 	io.Copy(os.Stdout, &r13)
+	fmt.Printf("\n")
+
+	showImage()
 
 	fmt.Printf("\n")
 }
@@ -202,4 +208,28 @@ func rot13(x byte) byte {
 		return x
 	}
 	return output[match]
+}
+
+type MyImage struct{}
+
+func showImage() {
+	m := image.NewRGBA(image.Rect(0, 0, 100, 100))
+	fmt.Println(m.Bounds())
+	fmt.Println(m.At(0, 0).RGBA())
+
+	i := MyImage{}
+	pic.ShowImage(i)
+}
+
+func (i MyImage) Bounds() image.Rectangle {
+	return image.Rect(0, 0, 100, 100)
+}
+
+func (i MyImage) ColorModel() color.Model {
+	return color.RGBAModel
+}
+
+func (i MyImage) At(x, y int) color.Color {
+	v := uint8(x * y)
+	return color.RGBA{v, v, 255, 255}
 }
