@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/tour/pic"
 	"golang.org/x/tour/reader"
 )
 
@@ -217,8 +216,8 @@ func showImage() {
 	fmt.Println(m.Bounds())
 	fmt.Println(m.At(0, 0).RGBA())
 
-	i := MyImage{}
-	pic.ShowImage(i)
+	// i := MyImage{}
+	// pic.ShowImage(i)
 }
 
 func (i MyImage) Bounds() image.Rectangle {

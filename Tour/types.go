@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"golang.org/x/tour/pic"
 	"golang.org/x/tour/wc"
 )
 
@@ -104,7 +103,7 @@ func printSlice(s []int) {
 }
 
 func sliceExercise() {
-	pic.Show(myPic)
+	// pic.Show(myPic)
 }
 
 func myPic(dx, dy int) [][]uint8 {
