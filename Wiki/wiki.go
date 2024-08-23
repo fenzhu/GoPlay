@@ -29,6 +29,8 @@ func main() {
 	}
 	fmt.Println(string(p2.Body))
 
+	start()
+
 	// http.HandleFunc("/", handler)
 	http.HandleFunc("/view/", makeHandler(viewHandler))
 	http.HandleFunc("/edit/", makeHandler(editHandler))
