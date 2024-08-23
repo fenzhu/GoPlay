@@ -1,11 +1,11 @@
 package main
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"regexp"
 	"text/template"
 )
@@ -15,6 +15,8 @@ var templates = template.Must(template.ParseFiles("edit.html", "view.html"))
 var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
 
 func main() {
+	start()
+
 	p1 := &Page{Title: "TestPage", Body: []byte("This is a sample Page")}
 	err := p1.save()
 	if err != nil {
@@ -28,8 +30,6 @@ func main() {
 		return
 	}
 	fmt.Println(string(p2.Body))
-
-	start()
 
 	// http.HandleFunc("/", handler)
 	http.HandleFunc("/view/", makeHandler(viewHandler))
@@ -120,15 +120,59 @@ type Page struct {
 }
 
 func (p *Page) save() error {
-	filename := p.Title + ".txt"
-	return os.WriteFile(filename, p.Body, 0600)
+	// filename := p.Title + ".txt"
+	// return os.WriteFile(filename, p.Body, 0600)
+	return p.saveDB()
 }
 
 func loadPage(title string) (*Page, error) {
-	filename := title + ".txt"
-	body, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, err
+	// filename := title + ".txt"
+	// body, err := os.ReadFile(filename)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// return &Page{Title: title, Body: body}, nil
+	return loadDBPage(title)
+}
+
+func loadDBPage(title string) (*Page, error) {
+	var page Page
+
+	page.Title = title
+	row := db.QueryRow("SELECT * FROM article WHERE title = ?", title)
+	if err := row.Scan(&page.Title, &page.Body); err != nil {
+		if err == sql.ErrNoRows {
+			return &page, fmt.Errorf("pageByTitle %s, no such page", title)
+		} else {
+			return &page, fmt.Errorf("pageByTitle %s, %v", title, err)
+		}
 	}
-	return &Page{Title: title, Body: body}, nil
+
+	return &page, nil
+}
+
+func (p *Page) saveDB() error {
+	_, err := loadDBPage(p.Title)
+	fmt.Println("saveDB: load db page err", err)
+
+	var sqlScript string
+	var result sql.Result
+	if err == nil {
+		sqlScript = "UPDATE article set body = ? WHERE title = ?"
+		result, err = db.Exec(sqlScript, p.Body, p.Title)
+	} else {
+		sqlScript = "INSERT INTO article (title, body) VALUES (?, ?)"
+		result, err = db.Exec(sqlScript, p.Title, p.Body)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	_, err = result.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
