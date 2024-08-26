@@ -1,0 +1,2 @@
+curl -X POST http://localhost:8080/save/acewiki -H "Content-Type: text/plain" -d "test"  
+curl  http://localhost:8080/view/acewiki 
