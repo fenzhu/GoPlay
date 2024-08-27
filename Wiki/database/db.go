@@ -2,7 +2,6 @@ package database
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 
 	"github.com/go-sql-driver/mysql"
@@ -10,10 +9,12 @@ import (
 
 type DataCenter struct {
 	databases map[string]*sql.DB
+	caches    map[string]*Cache
 }
 
 var Center *DataCenter = &DataCenter{
 	databases: make(map[string]*sql.DB),
+	caches:    make(map[string]*Cache),
 }
 
 type DataOption struct {
@@ -21,6 +22,10 @@ type DataOption struct {
 	Passwd string
 	Addr   string
 	DBName string
+}
+
+type CacheOption struct {
+	Name string
 }
 
 func (d *DataCenter) CreateDatabase(option *DataOption) (*sql.DB, error) {
@@ -44,11 +49,22 @@ func (d *DataCenter) CreateDatabase(option *DataOption) (*sql.DB, error) {
 		return nil, err
 	}
 
-	fmt.Printf("%s connected\n", option.DBName)
+	// fmt.Printf("%s connected\n", option.DBName)
 	d.databases[option.DBName] = db
 	return db, nil
 }
 
 func (d *DataCenter) GetDatabase(name string) *sql.DB {
 	return d.databases[name]
+}
+
+func (d *DataCenter) CreateCache(option *CacheOption) (*Cache, error) {
+	cache := &Cache{Data: make(map[string]string)}
+
+	d.caches[option.Name] = cache
+	return cache, nil
+}
+
+func (d *DataCenter) GetCache(name string) *Cache {
+	return d.caches[name]
 }

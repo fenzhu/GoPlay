@@ -4,14 +4,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"regexp"
 
 	"example.com/wiki/database"
 	"example.com/wiki/page"
 	"example.com/wiki/service"
 )
-
-var validPath = regexp.MustCompile("^/(save|view)/([a-zA-Z0-9]+)$")
 
 func main() {
 	dbOption := &database.DataOption{
@@ -21,6 +18,11 @@ func main() {
 		DBName: "wiki",
 	}
 	database.Center.CreateDatabase(dbOption)
+
+	cacheOption := &database.CacheOption{
+		Name: "wiki",
+	}
+	database.Center.CreateCache(cacheOption)
 
 	p1 := &page.Page{Title: "TestPage2", Body: "This is a sample Page"}
 	err := p1.Save()
@@ -36,19 +38,7 @@ func main() {
 	}
 	fmt.Println(string(p2.Body))
 
-	http.HandleFunc("/view/", makeHandler(service.ViewHandler))
-	http.HandleFunc("/save/", makeHandler(service.SaveHandler))
+	http.HandleFunc("/view/", service.ViewHandler)
+	http.HandleFunc("/save/", service.SaveHandler)
 	log.Fatal(http.ListenAndServe(":8080", nil))
-}
-
-func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		m := validPath.FindStringSubmatch(r.URL.Path)
-
-		if m == nil {
-			http.NotFound(w, r)
-			return
-		}
-		fn(w, r, m[2])
-	}
 }

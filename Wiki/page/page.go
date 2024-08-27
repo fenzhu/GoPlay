@@ -16,17 +16,31 @@ func db() *sql.DB {
 	return database.Center.GetDatabase("wiki")
 }
 
+func cache() *database.Cache {
+	return database.Center.GetCache("wiki")
+}
+
 func LoadPage(title string) (*Page, error) {
 	var page Page
 
-	page.Title = title
-	row := db().QueryRow("SELECT * FROM article WHERE title = ?", title)
-	if err := row.Scan(&page.Title, &page.Body); err != nil {
-		if err == sql.ErrNoRows {
-			return &page, fmt.Errorf("pageByTitle %s, no such page", title)
-		} else {
-			return &page, fmt.Errorf("pageByTitle %s, %v", title, err)
+	var cache = cache().Data
+	body, ok := cache[title]
+	if !ok {
+		row := db().QueryRow("SELECT * FROM article WHERE title = ?", title)
+		if err := row.Scan(&page.Title, &page.Body); err != nil {
+			if err == sql.ErrNoRows {
+				return &page, fmt.Errorf("pageByTitle %s, no such page", title)
+			} else {
+				return &page, fmt.Errorf("pageByTitle %s, %v", title, err)
+			}
 		}
+
+		if cache[title] != page.Body {
+			cache[title] = page.Body
+		}
+	} else {
+		page.Title = title
+		page.Body = body
 	}
 
 	return &page, nil
