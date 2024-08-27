@@ -1,14 +1,16 @@
-package main
+package service
 
 import (
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+
+	"example.com/wiki/page"
 )
 
-func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
-	p, err := loadPage(title)
+func ViewHandler(w http.ResponseWriter, r *http.Request, title string) {
+	p, err := page.LoadPage(title)
 	if err != nil {
 		http.NotFound(w, r)
 		return
@@ -23,16 +25,16 @@ func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
 	}
 }
 
-func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
+func SaveHandler(w http.ResponseWriter, r *http.Request, title string) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	p := &Page{Title: title, Body: string(body)}
+	p := &page.Page{Title: title, Body: string(body)}
 
-	err = p.save()
+	err = p.Save()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -44,17 +46,5 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 	err = json.NewEncoder(w).Encode(p)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		m := validPath.FindStringSubmatch(r.URL.Path)
-
-		if m == nil {
-			http.NotFound(w, r)
-			return
-		}
-		fn(w, r, m[2])
 	}
 }

@@ -1,8 +1,10 @@
-package main
+package page
 
 import (
 	"database/sql"
 	"fmt"
+
+	"example.com/wiki/database"
 )
 
 type Page struct {
@@ -10,11 +12,15 @@ type Page struct {
 	Body  string
 }
 
-func loadPage(title string) (*Page, error) {
+func db() *sql.DB {
+	return database.Center.GetDatabase("wiki")
+}
+
+func LoadPage(title string) (*Page, error) {
 	var page Page
 
 	page.Title = title
-	row := db.QueryRow("SELECT * FROM article WHERE title = ?", title)
+	row := db().QueryRow("SELECT * FROM article WHERE title = ?", title)
 	if err := row.Scan(&page.Title, &page.Body); err != nil {
 		if err == sql.ErrNoRows {
 			return &page, fmt.Errorf("pageByTitle %s, no such page", title)
@@ -26,17 +32,17 @@ func loadPage(title string) (*Page, error) {
 	return &page, nil
 }
 
-func (p *Page) save() error {
-	_, err := loadPage(p.Title)
+func (p *Page) Save() error {
+	_, err := LoadPage(p.Title)
 
 	var sqlScript string
 	var result sql.Result
 	if err == nil {
 		sqlScript = "UPDATE article set body = ? WHERE title = ?"
-		result, err = db.Exec(sqlScript, p.Body, p.Title)
+		result, err = db().Exec(sqlScript, p.Body, p.Title)
 	} else {
 		sqlScript = "INSERT INTO article (title, body) VALUES (?, ?)"
-		result, err = db.Exec(sqlScript, p.Title, p.Body)
+		result, err = db().Exec(sqlScript, p.Title, p.Body)
 	}
 
 	if err != nil {
