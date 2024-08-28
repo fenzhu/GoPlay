@@ -2,7 +2,6 @@ package page
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -52,9 +51,9 @@ func LoadPage(title string) (*Article, error) {
 func (p *Article) Save() error {
 	articleMutex.Lock()
 	articles = append(articles, p)
+	cache().Data[p.Title] = p.Body
 	articleMutex.Unlock()
 
-	cache().Data[p.Title] = p.Body
 	tryBatch(batchSize)
 	return nil
 }
@@ -79,7 +78,6 @@ func batchWorker() {
 
 func tryBatch(trigger int) {
 	if len(articles) > trigger {
-		fmt.Printf("start batch, trigger %d\n", trigger)
 		err := db().Transaction(func(tx *gorm.DB) error {
 			for _, article := range articles {
 				result := db().Clauses(clause.OnConflict{
