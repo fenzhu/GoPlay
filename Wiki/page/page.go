@@ -8,7 +8,7 @@ import (
 )
 
 type Page struct {
-	Title string
+	Title string `gorm:"primarykey"`
 	Body  string
 }
 
@@ -27,7 +27,7 @@ func LoadPage(title string) (*Page, error) {
 	body, ok := cache[title]
 	if !ok {
 		// row := db().QueryRow("SELECT * FROM article WHERE title = ?", title)
-		db().Table("article").First(&page, "title = ?", title)
+		db().Table("article").First(&page)
 		// if err := row.Scan(&page.Title, &page.Body); err != nil {
 		// 	if err == sql.ErrNoRows {
 		// 		return &page, fmt.Errorf("pageByTitle %s, no such page", title)
