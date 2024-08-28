@@ -25,8 +25,6 @@ func ViewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// fmt.Printf("view %s\n", title)
-
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(p)
 	if err != nil {
@@ -55,8 +53,6 @@ func SaveHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	// fmt.Printf("save %v\n", p)
 
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(p)

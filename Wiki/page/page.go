@@ -1,6 +1,8 @@
 package page
 
 import (
+	"fmt"
+
 	"example.com/wiki/database"
 	"gorm.io/gorm"
 )
@@ -25,7 +27,7 @@ func LoadPage(title string) (*Page, error) {
 	body, ok := cache[title]
 	if !ok {
 		// row := db().QueryRow("SELECT * FROM article WHERE title = ?", title)
-		db().Table("article").First(&page)
+		db().Table("article").First(&page, "title = ?", title)
 		// if err := row.Scan(&page.Title, &page.Body); err != nil {
 		// 	if err == sql.ErrNoRows {
 		// 		return &page, fmt.Errorf("pageByTitle %s, no such page", title)
@@ -33,11 +35,12 @@ func LoadPage(title string) (*Page, error) {
 		// 		return &page, fmt.Errorf("pageByTitle %s, %v", title, err)
 		// 	}
 		// }
-
+		fmt.Printf("miss cache %s\n", title)
 		if cache[title] != page.Body {
 			cache[title] = page.Body
 		}
 	} else {
+		fmt.Printf("hit cache %s\n", title)
 		page.Title = title
 		page.Body = body
 	}
