@@ -46,7 +46,7 @@ func SaveHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	p := &page.Page{Title: title, Body: string(body)}
+	p := &page.Article{Title: title, Body: string(body)}
 
 	err = p.Save()
 	if err != nil {
