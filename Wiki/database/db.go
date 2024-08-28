@@ -3,9 +3,12 @@ package database
 import (
 	"fmt"
 	"log"
+	"os"
+	"time"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type DataCenter struct {
@@ -30,32 +33,29 @@ type CacheOption struct {
 }
 
 func (d *DataCenter) CreateDatabase(option *DataOption) (*gorm.DB, error) {
-	// cfg := mysql.Config{
-	// 	User:                 option.User,
-	// 	Passwd:               option.Passwd,
-	// 	Net:                  "tcp",
-	// 	Addr:                 option.Addr,
-	// 	DBName:               option.DBName,
-	// 	AllowNativePasswords: true,
-	// }
-	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		option.User, option.Passwd, option.Addr, option.DBName)
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	// gorm.Open(sql.Open("mysql"))
-	// db, err := sql.Open("mysql", cfg.FormatDSN())
+	file, err := os.Create("gorm-log.txt")
 	if err != nil {
-		log.Fatal(err)
-		return nil, err
+		panic(err)
 	}
 
-	// db.
-	// pingErr := db.Ping()
-	// if pingErr != nil {
-	// 	log.Fatal(pingErr)
-	// 	return nil, err
-	// }
+	newLogger := logger.New(
+		log.New(file, "\r\n", log.LstdFlags), // io writer
+		logger.Config{
+			SlowThreshold:             time.Second, // Slow SQL threshold
+			LogLevel:                  logger.Warn, // Log level
+			IgnoreRecordNotFoundError: false,       //
+			ParameterizedQueries:      false,       // include params in the SQL log
+			Colorful:                  false,       // Disable color
+		},
+	)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		option.User, option.Passwd, option.Addr, option.DBName)
 
-	// fmt.Printf("%s connected\n", option.DBName)
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: newLogger})
+	if err != nil {
+		panic(err)
+	}
+
 	d.databases[option.DBName] = db
 	return db, nil
 }

@@ -1,8 +1,6 @@
 package page
 
 import (
-	"fmt"
-
 	"example.com/wiki/database"
 	"gorm.io/gorm"
 )
@@ -35,12 +33,10 @@ func LoadPage(title string) (*Page, error) {
 		// 		return &page, fmt.Errorf("pageByTitle %s, %v", title, err)
 		// 	}
 		// }
-		fmt.Printf("miss cache %s\n", title)
 		if cache[title] != page.Body {
 			cache[title] = page.Body
 		}
 	} else {
-		fmt.Printf("hit cache %s\n", title)
 		page.Title = title
 		page.Body = body
 	}
