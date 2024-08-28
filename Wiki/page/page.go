@@ -1,9 +1,9 @@
 package page
 
 import (
+	"context"
 	"errors"
 	"log"
-	"sync"
 	"time"
 
 	"example.com/wiki/database"
@@ -49,37 +49,52 @@ func LoadPage(title string) (*Article, error) {
 }
 
 func (p *Article) Save() error {
-	articleMutex.Lock()
-	articles = append(articles, p)
-	cache().Data[p.Title] = p.Body
-	articleMutex.Unlock()
-
-	tryBatch(batchSize)
+	select {
+	case articleChan <- p:
+		//just add article to channel
+	default:
+		//channel is full now
+		go tryBatch(batchSize)
+		//block until channel space is available
+		articleChan <- p
+	}
 	return nil
 }
 
 func init() {
-	go batchWorker()
+	go batchWorker(context.Background())
 }
 
 var (
-	articles      = make([]*Article, 0, batchSize)
+	articleChan   = make(chan *Article, batchSize)
 	batchInterval = 10 * time.Second
 	batchSize     = 100
-	articleMutex  sync.Mutex
 )
 
-func batchWorker() {
+func batchWorker(ctx context.Context) {
+	ticker := time.NewTicker(batchInterval)
+	defer ticker.Stop()
 	for {
-		time.Sleep(batchInterval)
-		tryBatch(0)
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			go tryBatch(0)
+		}
 	}
 }
 
 func tryBatch(trigger int) {
-	if len(articles) > trigger {
+
+	// articles := make([]*Article, 0, len(articleChan))
+
+	// for article := range articleChan {
+	// 	articles = append(articles, article)
+	// }
+
+	if len(articleChan) > trigger {
 		err := db().Transaction(func(tx *gorm.DB) error {
-			for _, article := range articles {
+			for article := range articleChan {
 				result := db().Clauses(clause.OnConflict{
 					Columns:   []clause.Column{{Name: "title"}},
 					DoUpdates: clause.AssignmentColumns([]string{"body"}),
@@ -97,6 +112,6 @@ func tryBatch(trigger int) {
 			log.Println("batch write error:", err)
 		}
 
-		articles = articles[:0]
+		// articleChan = articleChan[:0]
 	}
 }
