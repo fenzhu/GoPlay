@@ -2,9 +2,14 @@ package page
 
 import (
 	"errors"
+	"fmt"
+	"log"
+	"sync"
+	"time"
 
 	"example.com/wiki/database"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Article struct {
@@ -45,11 +50,55 @@ func LoadPage(title string) (*Article, error) {
 }
 
 func (p *Article) Save() error {
-	_, err := LoadPage(p.Title)
+	articleMutex.Lock()
+	articles = append(articles, p)
+	articleMutex.Unlock()
 
-	if err == nil {
-		return db().Model(p).Update("body", p.Body).Error
-	} else {
-		return db().Create(p).Error
+	cache().Data[p.Title] = p.Body
+	tryBatch(batchSize)
+	return nil
+}
+
+func init() {
+	go batchWorker()
+}
+
+var (
+	articles      = make([]*Article, 0, batchSize)
+	batchInterval = 10 * time.Second
+	batchSize     = 100
+	articleMutex  sync.Mutex
+)
+
+func batchWorker() {
+	for {
+		time.Sleep(batchInterval)
+		tryBatch(0)
+	}
+}
+
+func tryBatch(trigger int) {
+	if len(articles) > trigger {
+		fmt.Printf("start batch, trigger %d\n", trigger)
+		err := db().Transaction(func(tx *gorm.DB) error {
+			for _, article := range articles {
+				result := db().Clauses(clause.OnConflict{
+					Columns:   []clause.Column{{Name: "title"}},
+					DoUpdates: clause.AssignmentColumns([]string{"body"}),
+				}).Create(article)
+
+				if result.Error != nil {
+					return result.Error
+				}
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			log.Println("batch write error:", err)
+		}
+
+		articles = articles[:0]
 	}
 }

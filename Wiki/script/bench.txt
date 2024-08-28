@@ -1,0 +1,38 @@
+// read 
+hey -n 1000000 -c 100 http://127.0.0.1:8080/view/acewiki
+
+Summary:
+  Total:        6.0716 secs
+  Slowest:      0.0138 secs
+  Fastest:      0.0000 secs
+  Average:      0.0006 secs
+  Requests/sec: 164700.9933
+
+  Total data:   38000000 bytes
+  Size/request: 38 bytes
+  
+// before batch write
+hey -n 10000 -c 10 -m POST -d "testdata" http://127.0.0.1:8080/save/acewiki
+
+Summary:
+  Total:        1.3660 secs
+  Slowest:      0.0042 secs
+  Fastest:      0.0007 secs
+  Average:      0.0013 secs
+  Requests/sec: 7320.7873
+
+  Total data:   380000 bytes
+  Size/request: 38 bytes
+
+// after batch write
+hey -n 10000 -c 10 -m POST -d "testdata" http://127.0.0.1:8080/save/acewiki
+
+Summary:
+  Total:        0.6492 secs
+  Slowest:      0.1175 secs
+  Fastest:      0.0000 secs
+  Average:      0.0006 secs
+  Requests/sec: 15404.5750
+
+  Total data:   380000 bytes
+  Size/request: 38 bytes
