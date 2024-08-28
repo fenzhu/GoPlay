@@ -33,7 +33,9 @@ func concurrency() {
 	go co_fibonacci(cap(fc), fc)
 	for i := range fc {
 		fmt.Printf("%d\n", i)
+		// fmt.Printf("fc: %d\n", <-fc)
 	}
+	fmt.Printf("fc: %d\n", <-fc)
 
 	cs := make(chan int)
 	quit := make(chan int)

@@ -49,3 +49,16 @@ Summary:
 
   Total data:   380000 bytes
   Size/request: 38 bytes
+
+// optimize channel usage 
+hey -n 10000 -c 10 -m POST -d "testdata" http://127.0.0.1:8080/save/acewiki
+
+Summary:
+  Total:        0.6896 secs
+  Slowest:      0.0026 secs
+  Fastest:      0.0001 secs
+  Average:      0.0007 secs
+  Requests/sec: 14500.9540
+
+  Total data:   380000 bytes
+  Size/request: 38 bytes

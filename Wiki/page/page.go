@@ -66,7 +66,7 @@ func init() {
 }
 
 var (
-	articleChan   = make(chan *Article, batchSize)
+	articleChan   = make(chan *Article, batchSize+1)
 	batchInterval = 10 * time.Second
 	batchSize     = 100
 )
