@@ -25,6 +25,7 @@ func main() {
 	database.Center.CreateCache(cacheOption)
 
 	p1 := &page.Page{Title: "TestPage2", Body: "This is a sample Page"}
+
 	err := p1.Save()
 	if err != nil {
 		fmt.Println(err)
@@ -36,6 +37,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
+
 	fmt.Println(string(p2.Body))
 
 	http.HandleFunc("/view/", service.ViewHandler)

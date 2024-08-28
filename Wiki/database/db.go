@@ -1,19 +1,20 @@
 package database
 
 import (
-	"database/sql"
+	"fmt"
 	"log"
 
-	"github.com/go-sql-driver/mysql"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 type DataCenter struct {
-	databases map[string]*sql.DB
+	databases map[string]*gorm.DB
 	caches    map[string]*Cache
 }
 
 var Center *DataCenter = &DataCenter{
-	databases: make(map[string]*sql.DB),
+	databases: make(map[string]*gorm.DB),
 	caches:    make(map[string]*Cache),
 }
 
@@ -28,33 +29,38 @@ type CacheOption struct {
 	Name string
 }
 
-func (d *DataCenter) CreateDatabase(option *DataOption) (*sql.DB, error) {
-	cfg := mysql.Config{
-		User:                 option.User,
-		Passwd:               option.Passwd,
-		Net:                  "tcp",
-		Addr:                 option.Addr,
-		DBName:               option.DBName,
-		AllowNativePasswords: true,
-	}
-	db, err := sql.Open("mysql", cfg.FormatDSN())
+func (d *DataCenter) CreateDatabase(option *DataOption) (*gorm.DB, error) {
+	// cfg := mysql.Config{
+	// 	User:                 option.User,
+	// 	Passwd:               option.Passwd,
+	// 	Net:                  "tcp",
+	// 	Addr:                 option.Addr,
+	// 	DBName:               option.DBName,
+	// 	AllowNativePasswords: true,
+	// }
+	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		option.User, option.Passwd, option.Addr, option.DBName)
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	// gorm.Open(sql.Open("mysql"))
+	// db, err := sql.Open("mysql", cfg.FormatDSN())
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
 	}
 
-	pingErr := db.Ping()
-	if pingErr != nil {
-		log.Fatal(pingErr)
-		return nil, err
-	}
+	// db.
+	// pingErr := db.Ping()
+	// if pingErr != nil {
+	// 	log.Fatal(pingErr)
+	// 	return nil, err
+	// }
 
 	// fmt.Printf("%s connected\n", option.DBName)
 	d.databases[option.DBName] = db
 	return db, nil
 }
 
-func (d *DataCenter) GetDatabase(name string) *sql.DB {
+func (d *DataCenter) GetDatabase(name string) *gorm.DB {
 	return d.databases[name]
 }
 
