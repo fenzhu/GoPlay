@@ -73,6 +73,22 @@ func slice() {
 	//copy do not allocate new memory
 	// copy(p, s)
 	fmt.Println(p)
+
+	interval := make([]int, 0)
+	var test [2]int
+	test[0] = 1
+	test[1] = 2
+	interval = test[:]
+
+	is := make([][]int, 2)
+	is = append(is, interval)
+
+	test[0] = 10
+	is = append(is, test[:])
+	fmt.Println(interval)
+	fmt.Println(test)
+	//is[0] equals is[1] in value, because interval's underlying array is test
+	fmt.Println(is)
 }
 
 var digitRegexp = regexp.MustCompile("[0-0]+")
