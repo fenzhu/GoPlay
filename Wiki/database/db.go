@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"gorm.io/driver/mysql"
@@ -65,7 +66,7 @@ func (d *DataCenter) GetDatabase(name string) *gorm.DB {
 }
 
 func (d *DataCenter) CreateCache(option *CacheOption) (*Cache, error) {
-	cache := &Cache{Data: make(map[string]string)}
+	cache := &Cache{Data: &sync.Map{}}
 
 	d.caches[option.Name] = cache
 	return cache, nil

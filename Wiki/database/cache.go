@@ -1,5 +1,7 @@
 package database
 
+import "sync"
+
 type Cache struct {
-	Data map[string]string
+	Data *sync.Map
 }

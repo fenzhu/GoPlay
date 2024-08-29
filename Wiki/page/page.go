@@ -32,17 +32,17 @@ func LoadPage(title string) (*Article, error) {
 	page := &Article{Title: title}
 
 	var cache = cache().Data
-	body, ok := cache[title]
+	body, ok := cache.Load(title)
 	if !ok {
 		res := db().First(&page)
 		if res.Error != nil {
 			return nil, errors.New("no article found")
 		}
 
-		cache[title] = page.Body
+		cache.Store(title, page.Body)
 	} else {
 		page.Title = title
-		page.Body = body
+		page.Body = body.(string)
 	}
 
 	return page, nil
@@ -86,12 +86,6 @@ func batchWorker(ctx context.Context) {
 
 func tryBatch(trigger int) {
 
-	// articles := make([]*Article, 0, len(articleChan))
-
-	// for article := range articleChan {
-	// 	articles = append(articles, article)
-	// }
-
 	if len(articleChan) > trigger {
 		err := db().Transaction(func(tx *gorm.DB) error {
 			for article := range articleChan {
@@ -111,7 +105,5 @@ func tryBatch(trigger int) {
 		if err != nil {
 			log.Println("batch write error:", err)
 		}
-
-		// articleChan = articleChan[:0]
 	}
 }
