@@ -58,6 +58,14 @@ func (p *Article) Save() error {
 		//block until channel space is available
 		articleChan <- p
 	}
+
+	// update cache
+	var cache = cache().Data
+	_, ok := cache.Load(p.Title)
+	if ok {
+		cache.Store(p.Title, p.Body)
+	}
+
 	return nil
 }
 
@@ -85,7 +93,6 @@ func batchWorker(ctx context.Context) {
 }
 
 func tryBatch(trigger int) {
-
 	if len(articleChan) > trigger {
 		err := db().Transaction(func(tx *gorm.DB) error {
 			for article := range articleChan {
