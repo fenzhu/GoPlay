@@ -76,7 +76,9 @@ func init() {
 var (
 	articleChan   = make(chan *Article, batchSize+1)
 	batchInterval = 10 * time.Second
-	batchSize     = 100
+	batchSize     = 1000
+	workerSize    = 50
+	batchPool     = make(chan struct{}, workerSize)
 )
 
 func batchWorker(ctx context.Context) {
@@ -93,24 +95,39 @@ func batchWorker(ctx context.Context) {
 }
 
 func tryBatch(trigger int) {
-	if len(articleChan) > trigger {
-		err := db().Transaction(func(tx *gorm.DB) error {
-			for article := range articleChan {
-				result := db().Clauses(clause.OnConflict{
-					Columns:   []clause.Column{{Name: "title"}},
-					DoUpdates: clause.AssignmentColumns([]string{"body"}),
-				}).Create(article)
+	select {
+	case batchPool <- struct{}{}:
+		log.Println("batch worker start")
+		defer func() {
+			log.Println("batch worker end")
+			<-batchPool
+		}()
+		if len(articleChan) > trigger {
+			log.Println("batch size ", len(articleChan))
+			err := db().Transaction(func(tx *gorm.DB) error {
+				for i := 0; i < len(articleChan); i++ {
+					article := <-articleChan
+					result := db().Clauses(clause.OnConflict{
+						Columns:   []clause.Column{{Name: "title"}},
+						DoUpdates: clause.AssignmentColumns([]string{"body"}),
+					}).Create(article)
 
-				if result.Error != nil {
-					return result.Error
+					if result.Error != nil {
+						return result.Error
+					}
 				}
+
+				log.Println("transaction success")
+				return nil
+			})
+
+			if err != nil {
+				log.Println("batch write error:", err)
+			} else {
+				log.Println("batch write success")
 			}
-
-			return nil
-		})
-
-		if err != nil {
-			log.Println("batch write error:", err)
 		}
+	default:
+		log.Println("batch work is busy, skip batch")
 	}
 }
