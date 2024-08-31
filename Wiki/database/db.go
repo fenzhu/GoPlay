@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sync"
 	"time"
 
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -31,6 +31,7 @@ type DataOption struct {
 
 type CacheOption struct {
 	Name string
+	Addr string
 }
 
 func (d *DataCenter) CreateDatabase(option *DataOption) (*gorm.DB, error) {
@@ -66,7 +67,13 @@ func (d *DataCenter) GetDatabase(name string) *gorm.DB {
 }
 
 func (d *DataCenter) CreateCache(option *CacheOption) (*Cache, error) {
-	cache := &Cache{Data: &sync.Map{}}
+	client := redis.NewClient(&redis.Options{
+		Addr:     option.Addr,
+		Password: "",
+		DB:       0,
+	})
+
+	cache := &Cache{Data: client}
 
 	d.caches[option.Name] = cache
 	return cache, nil

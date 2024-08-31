@@ -1,7 +1,7 @@
 package database
 
-import "sync"
+import "github.com/redis/go-redis/v9"
 
 type Cache struct {
-	Data *sync.Map
+	Data *redis.Client
 }

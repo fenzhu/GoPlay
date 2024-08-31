@@ -32,38 +32,49 @@ func LoadPage(title string) (*Article, error) {
 	page := &Article{Title: title}
 
 	var cache = cache().Data
-	body, ok := cache.Load(title)
-	if !ok {
+	res := cache.Get(context.Background(), title)
+	if res.Err() != nil {
 		res := db().First(&page)
 		if res.Error != nil {
 			return nil, errors.New("no article found")
 		}
 
-		cache.Store(title, page.Body)
+		cache.Set(context.Background(), title, page.Body, 0)
 	} else {
-		page.Title = title
-		page.Body = body.(string)
+		page.Body = res.Val()
 	}
+	// body, ok := cache.Load(title)
+	// if !ok {
+	// 	res := db().First(&page)
+	// 	if res.Error != nil {
+	// 		return nil, errors.New("no article found")
+	// 	}
+
+	// 	cache.Store(title, page.Body)
+	// } else {
+	// 	page.Title = title
+	// 	page.Body = body.(string)
+	// }
 
 	return page, nil
 }
 
 func (p *Article) Save() error {
-	select {
-	case articleChan <- p:
-		//just add article to channel
-	default:
-		//channel is full now
-		go tryBatch(batchSize)
-		//block until channel space is available
-		articleChan <- p
-	}
+	// select {
+	// case articleChan <- p:
+	//just add article to channel
+	// default:
+	//channel is full now
+	// go tryBatch(batchSize)
+	//block until channel space is available
+	// 	articleChan <- p
+	// }
 
 	// update cache
 	var cache = cache().Data
-	_, ok := cache.Load(p.Title)
-	if ok {
-		cache.Store(p.Title, p.Body)
+	res := cache.Get(context.Background(), p.Title)
+	if res.Err() != nil {
+		cache.Set(context.Background(), p.Title, p.Body, 0)
 	}
 
 	return nil
@@ -89,7 +100,7 @@ func batchWorker(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			go tryBatch(0)
+			// go tryBatch(0)
 		}
 	}
 }
