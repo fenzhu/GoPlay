@@ -13,6 +13,7 @@ var (
 	ONE_WEEK_IN_SECONDS int64   = 7 * 86400
 	VOTE_SCORE          float64 = 432
 	ARTICLE_PREFIX      string  = "article:"
+	ARTICLES_PER_PAGE   int64   = 25
 )
 
 func client() *redis.Client {
@@ -52,7 +53,7 @@ func article_vote(user string, article string) {
 	}
 }
 
-func article_post(user string, title string, link string) {
+func article_post(user string, title string, link string) string {
 	client := client()
 	articleId := string(client.Incr(context.Background(), "article:").Val())
 
@@ -60,11 +61,11 @@ func article_post(user string, title string, link string) {
 	now := time.Now().Unix()
 	article := ARTICLE_PREFIX + articleId
 	client.HMSet(context.Background(), article, map[string]interface{}{
-		"title":  title,
-		"link":   link,
-		"poster": user,
-		"time":   now,
-		"votes":  1,
+		"title":    title,
+		"link":     link,
+		"poster":   user,
+		"posttime": now,
+		"votes":    1,
 	})
 
 	//更新投票信息
@@ -75,4 +76,24 @@ func article_post(user string, title string, link string) {
 	client.ZAdd(context.Background(), "score", redis.Z{Member: article, Score: VOTE_SCORE})
 	//更新发布时间
 	client.ZAdd(context.Background(), "time", redis.Z{Member: article, Score: float64(now)})
+
+	return articleId
+}
+
+// type Article struct {
+// 	Id       string
+// 	Title    string
+// 	Link     string
+// 	Poster   string
+// 	Posttime string
+// 	Votes    int64
+// }
+
+func GetArticles(page int64) []string {
+	start := (page - 1) * ARTICLES_PER_PAGE
+	end := start + ARTICLES_PER_PAGE - 1
+
+	client := client()
+	articles := client.ZRevRange(context.Background(), "score", start, end).Val()
+	return articles
 }
