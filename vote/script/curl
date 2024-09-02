@@ -1,0 +1,4 @@
+
+curl -X POST "http://localhost:8080/article/post?user=baker&title=test&link=google.com"
+curl -X POST "http://localhost:8080/article/vote?user=baker&article="
+curl http://localhost:8080/article/1

@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -31,14 +33,14 @@ score 文章分数
 voted:(文章id) 文章投票用户
 article:(文章id) 文章信息
 */
-func article_vote(user string, article string) {
+func ArtivleVote(user string, article string) error {
 	client := client()
 
 	cutoff := time.Now().Unix() - ONE_WEEK_IN_SECONDS
 	publishTime := client.ZScore(context.Background(), "time", article)
 	//a week passed, can't vote
 	if cutoff > int64(publishTime.Val()) {
-		return
+		return errors.New("a week passed, can't vote")
 	}
 
 	articleId := getArticleID(article)
@@ -50,13 +52,21 @@ func article_vote(user string, article string) {
 		client.ZIncrBy(context.Background(), "score", VOTE_SCORE, article)
 		//更新文章信息
 		client.HIncrBy(context.Background(), article, "votes", 1)
+		return errors.New("user already voted")
 	}
+	return nil
 }
 
-func article_post(user string, title string, link string) string {
+func ArticlePost(user string, title string, link string) string {
 	client := client()
-	articleId := string(client.Incr(context.Background(), "article:").Val())
-
+	res := client.Incr(context.Background(), "article:")
+	if res.Err() != nil {
+		return res.Err().Error()
+	}
+	id := res.Val()
+	fmt.Printf("next id: %d\n", id)
+	articleId := fmt.Sprintf("%d", id)
+	// strings.i
 	//更新文章信息
 	now := time.Now().Unix()
 	article := ARTICLE_PREFIX + articleId
@@ -80,20 +90,24 @@ func article_post(user string, title string, link string) string {
 	return articleId
 }
 
-// type Article struct {
-// 	Id       string
-// 	Title    string
-// 	Link     string
-// 	Poster   string
-// 	Posttime string
-// 	Votes    int64
-// }
-
-func GetArticles(page int64) []string {
+func GetArticles(page int64) []map[string]string {
 	start := (page - 1) * ARTICLES_PER_PAGE
 	end := start + ARTICLES_PER_PAGE - 1
 
 	client := client()
-	articles := client.ZRevRange(context.Background(), "score", start, end).Val()
+	articleIds := client.ZRevRange(context.Background(), "score", start, end).Val()
+
+	articles := make([]map[string]string, 0, len(articleIds))
+	for _, ararticleId := range articleIds {
+		article := client.HGetAll(context.Background(), ARTICLE_PREFIX+ararticleId).Val()
+
+		articles = append(articles, article)
+	}
 	return articles
+}
+
+func GetArticle(id string) map[string]string {
+	client := client()
+	article := client.HGetAll(context.Background(), ARTICLE_PREFIX+id).Val()
+	return article
 }
