@@ -43,18 +43,6 @@ func LoadPage(title string) (*Article, error) {
 	} else {
 		page.Body = res.Val()
 	}
-	// body, ok := cache.Load(title)
-	// if !ok {
-	// 	res := db().First(&page)
-	// 	if res.Error != nil {
-	// 		return nil, errors.New("no article found")
-	// 	}
-
-	// 	cache.Store(title, page.Body)
-	// } else {
-	// 	page.Title = title
-	// 	page.Body = body.(string)
-	// }
 
 	return page, nil
 }
@@ -72,10 +60,10 @@ func (p *Article) Save() error {
 
 	// update cache
 	var cache = cache().Data
-	res := cache.Get(context.Background(), p.Title)
-	if res.Err() != nil {
-		cache.Set(context.Background(), p.Title, p.Body, 0)
-	}
+	// res := cache.Get(context.Background(), p.Title)
+	// if res.Err() != nil {
+	cache.Set(context.Background(), p.Title, p.Body, 0)
+	// }
 
 	return nil
 }
