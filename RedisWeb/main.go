@@ -4,7 +4,7 @@ import "example.com/redisweb/database"
 
 func main() {
 	database.CreateRedis(&database.Option{
-		Name: "vote",
+		Name: "redisweb",
 		Addr: "127.0.0.1:6379",
 	})
 }
