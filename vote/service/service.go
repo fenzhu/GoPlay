@@ -64,7 +64,6 @@ func ArticlePost(user string, title string, link string) string {
 		return res.Err().Error()
 	}
 	id := res.Val()
-	fmt.Printf("next id: %d\n", id)
 	articleId := fmt.Sprintf("%d", id)
 	// strings.i
 	//更新文章信息
@@ -98,9 +97,9 @@ func GetArticles(page int64) []map[string]string {
 	articleIds := client.ZRevRange(context.Background(), "score", start, end).Val()
 
 	articles := make([]map[string]string, 0, len(articleIds))
-	for _, ararticleId := range articleIds {
-		article := client.HGetAll(context.Background(), ARTICLE_PREFIX+ararticleId).Val()
-
+	for _, articleId := range articleIds {
+		article := client.HGetAll(context.Background(), articleId).Val()
+		// fmt.Printf("%s: %v\n", articleId, article)
 		articles = append(articles, article)
 	}
 	return articles
