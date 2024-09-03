@@ -15,11 +15,16 @@ func client() *redis.Client {
 var (
 	cli = client()
 	ctx = context.Background()
+	//set
+	LOGIN = "login"
+	//zset
+	RECENT = "recent"
+	//zset
+	VIEWED_PREFIX = "viewed:"
 )
 
 func CheckToken(token string) string {
-
-	cmd := cli.HGet(ctx, "login", token)
+	cmd := cli.HGet(ctx, LOGIN, token)
 	return cmd.Val()
 }
 
@@ -27,14 +32,14 @@ func UpdateToken(token string, user string, item *string) {
 	client := client()
 
 	timestamp := time.Now().Unix()
-	client.HSet(ctx, "login", token, user)
-	client.ZAdd(ctx, "recent", redis.Z{
+	client.HSet(ctx, LOGIN, token, user)
+	client.ZAdd(ctx, RECENT, redis.Z{
 		Member: token,
 		Score:  float64(timestamp),
 	})
 
 	if item != nil {
-		viewKey := "viewed:" + token
+		viewKey := VIEWED_PREFIX + token
 		client.ZAdd(ctx, viewKey, redis.Z{
 			Member: *item,
 			Score:  float64(timestamp),
