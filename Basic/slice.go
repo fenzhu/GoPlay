@@ -89,6 +89,12 @@ func slice() {
 	fmt.Println(test)
 	//is[0] equals is[1] in value, because interval's underlying array is test
 	fmt.Println(is)
+
+	//slice not initialized is nil, no element, has length 0
+	var nilslice []int
+	fmt.Println(nilslice)
+	fmt.Println(nilslice == nil)
+	fmt.Println(len(nilslice))
 }
 
 var digitRegexp = regexp.MustCompile("[0-0]+")
