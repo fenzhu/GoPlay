@@ -1,0 +1,3 @@
+curl http://localhost:8080/ping
+curl -X POST "http://localhost:8080/login?user=baker&token=aabbcctoken"
+curl -X POST "http://localhost:8080/login?user=baker&token=aabbcctoken&item=shoe"

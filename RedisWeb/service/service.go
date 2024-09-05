@@ -8,6 +8,19 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+/*
+login HSet
+
+	token: user
+
+recent ZSet
+
+	token: timestamp
+
+viewed:token ZSet
+
+	item: timestamp
+*/
 func client() *redis.Client {
 	return database.GetRedis()
 }
@@ -28,7 +41,7 @@ func CheckToken(token string) string {
 	return cmd.Val()
 }
 
-func UpdateToken(token string, user string, item *string) {
+func UpdateToken(token string, user string, item string) {
 	client := client()
 
 	timestamp := time.Now().Unix()
@@ -38,10 +51,10 @@ func UpdateToken(token string, user string, item *string) {
 		Score:  float64(timestamp),
 	})
 
-	if item != nil {
+	if len(item) > 0 {
 		viewKey := VIEWED_PREFIX + token
 		client.ZAdd(ctx, viewKey, redis.Z{
-			Member: *item,
+			Member: item,
 			Score:  float64(timestamp),
 		})
 		//remain latest 25 items

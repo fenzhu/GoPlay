@@ -1,6 +1,11 @@
 package database
 
-import "github.com/redis/go-redis/v9"
+import (
+	"context"
+	"fmt"
+
+	"github.com/redis/go-redis/v9"
+)
 
 type Option struct {
 	Name string
@@ -19,7 +24,12 @@ func CreateRedis(option *Option) {
 		Password: "",
 		DB:       0,
 	})
-
+	cmd := client.Ping(context.Background())
+	if cmd.Err() != nil {
+		panic(cmd.Err())
+	} else {
+		fmt.Println("redis connected" + cmd.Val())
+	}
 	DB.redis = client
 }
 
