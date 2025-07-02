@@ -31,18 +31,18 @@ func cache() *database.Cache {
 func LoadPage(title string) (*Article, error) {
 	page := &Article{Title: title}
 
-	var cache = cache().Data
-	res := cache.Get(context.Background(), title)
-	if res.Err() != nil {
-		res := db().First(&page)
-		if res.Error != nil {
-			return nil, errors.New("no article found")
-		}
-
-		cache.Set(context.Background(), title, page.Body, 0)
-	} else {
-		page.Body = res.Val()
+	// var cache = cache().Data
+	// res := cache.Get(context.Background(), title)
+	// if res.Err() != nil {
+	res := db().First(&page)
+	if res.Error != nil {
+		return nil, errors.New("no article found")
 	}
+
+	// cache.Set(context.Background(), title, page.Body, 0)
+	// } else {
+	// 	page.Body = res.Val()
+	// }
 
 	return page, nil
 }

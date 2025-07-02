@@ -12,7 +12,7 @@ import (
 func main() {
 	database.CreateRedis(&database.Option{
 		Name: "redisweb",
-		Addr: "10.10.5.106:6379",
+		Addr: "127.0.0.1:6379",
 	})
 
 	logFile, err := os.OpenFile("gin.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
