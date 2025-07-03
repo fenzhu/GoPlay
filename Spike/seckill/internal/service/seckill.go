@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"strconv"
+	"strings"
+	"sync"
 
 	"seckill/internal/model"
 	"seckill/internal/repository"
@@ -14,27 +16,95 @@ var (
 	ErrProductNotFound = errors.New("product not found")
 )
 
-func Seckill(productID, userID int64) error {
-	// 1. Atomically decrement stock in Redis using DECR
-	// DECR returns the value of key after the decrement.
-	newStock, err := repository.RDB.Decr(context.Background(), "product:"+strconv.FormatInt(productID, 10)+":stock").Result()
-	if err != nil {
-		// If key doesn't exist, it might indicate product not found or initial sync issue
-		// For simplicity, we'll treat it as product not found here.
-		return ErrProductNotFound
-	}
+// seckillScript is a Lua script to atomically check and decrement stock in Redis.
+// KEYS[1]: product stock key (e.g., "product:1:stock")
+// ARGV[1]: quantity to decrement (always 1 for seckill)
+// Returns:
+//
+//	>= 0: new stock value (success)
+//	-1:  stock not found (or key doesn't exist)
+//	-2:  insufficient stock
+const seckillScript = `
+local stock_key = KEYS[1]
+local quantity = tonumber(ARGV[1])
 
-	if newStock < 0 {
-		// If stock goes below zero, it means oversold. Increment back and return error.
-		_, err := repository.RDB.Incr(context.Background(), "product:"+strconv.FormatInt(productID, 10)+":stock").Result()
-		if err != nil {
-			// Log this error, as it indicates a problem with Redis rollback
-			// For now, we'll just return the original out of stock error
+local current_stock = tonumber(redis.call('GET', stock_key))
+
+if current_stock == nil then
+    return -1
+end
+
+if current_stock >= quantity then
+    return redis.call('DECRBY', stock_key, quantity)
+else
+    return -2
+end
+`
+
+var (
+	seckillScriptSHA  string
+	seckillScriptOnce sync.Once
+)
+
+// getSeckillScriptSHA 保证只加载一次脚本，并返回 SHA1
+func getSeckillScriptSHA() (string, error) {
+	var err error
+	seckillScriptOnce.Do(func() {
+		sha, e := repository.RDB.ScriptLoad(context.Background(), seckillScript).Result()
+		if e != nil {
+			err = e
+			return
 		}
-		return ErrOutOfStock
+		seckillScriptSHA = sha
+	})
+	return seckillScriptSHA, err
+}
+
+// runSeckillScript 封装 EvalSha+Eval+ScriptLoad 的兜底逻辑
+func runSeckillScript(productStockKey string) (int64, error) {
+	sha, err := getSeckillScriptSHA()
+	if err != nil {
+		return 0, err
+	}
+	result, err := repository.RDB.EvalSha(context.Background(), sha, []string{productStockKey}, 1).Result()
+	if err != nil {
+		if strings.HasPrefix(err.Error(), "NOSCRIPT") {
+			// Eval 兜底
+			result, err = repository.RDB.Eval(context.Background(), seckillScript, []string{productStockKey}, 1).Result()
+			if err != nil {
+				return 0, err
+			}
+			// 刷新 SHA
+			sha, shaErr := repository.RDB.ScriptLoad(context.Background(), seckillScript).Result()
+			if shaErr == nil {
+				seckillScriptSHA = sha
+			}
+		} else {
+			return 0, err
+		}
+	}
+	return result.(int64), nil
+}
+
+func Seckill(productID, userID int64) error {
+	productStockKey := "product:" + strconv.FormatInt(productID, 10) + ":stock"
+
+	scriptResult, err := runSeckillScript(productStockKey)
+	if err != nil {
+		return err
 	}
 
-	// 2. Create order and update MySQL stock in separate goroutines
+	switch scriptResult {
+	case -1:
+		return ErrProductNotFound
+	case -2:
+		return ErrOutOfStock
+	default:
+		// Stock successfully decremented, scriptResult is the new stock value
+		// Continue with order creation and MySQL stock update
+	}
+
+	// Create order and update MySQL stock in separate goroutines
 	go func() {
 		// Create order in DB
 		_, err := repository.DB.Exec("INSERT INTO orders (product_id, user_id) VALUES (?, ?)", productID, userID)

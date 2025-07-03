@@ -1,4 +1,3 @@
-
 package api
 
 import (
@@ -6,7 +5,11 @@ import (
 )
 
 func NewRouter() *gin.Engine {
-	router := gin.Default()
+	// Use gin.New() instead of gin.Default() to avoid default gin.Logger() middleware
+	router := gin.New()
+
+	// Add Recovery middleware to recover from panics, if desired
+	router.Use(gin.Recovery())
 
 	router.POST("/seckill", SeckillHandler)
 	router.GET("/products", GetProductsHandler)
