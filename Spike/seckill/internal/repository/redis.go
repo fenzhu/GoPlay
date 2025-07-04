@@ -69,12 +69,14 @@ func GetAllProducts() ([]model.Product, error) {
 func GetProduct(id string) (map[string]string, error) {
 	key := "product:" + id
 
-	hCmd := RDB.HGetAll(context.Background(), key)
+	hCmd := RDB.HGet(context.Background(), key, "name")
 	if hCmd.Err() != nil {
 		return nil, hCmd.Err()
 	}
 
 	val := hCmd.Val()
 
-	return val, nil
+	m := map[string]string{"id": id, "name": val}
+
+	return m, nil
 }
