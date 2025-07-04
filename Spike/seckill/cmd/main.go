@@ -3,14 +3,15 @@ package main
 import (
 	"io/ioutil"
 	"log"
-	"net/http" // Import net/http for pprof
+	"net/http"         // Import net/http for pprof
 	_ "net/http/pprof" // Import pprof for HTTP endpoints
 
-	"github.com/gin-gonic/gin"
-	"gopkg.in/yaml.v2"
 	"seckill/internal/api"
 	"seckill/internal/repository"
 	"seckill/internal/service"
+
+	"github.com/gin-gonic/gin"
+	"gopkg.in/yaml.v2"
 )
 
 func main() {
@@ -50,7 +51,7 @@ func main() {
 	// Register pprof handlers on a separate port
 	// In production, consider exposing this on an internal network or with authentication.
 	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil)) // pprof will listen on port 6060
+		log.Println(http.ListenAndServe(":6060", nil)) // pprof will listen on port 6060
 	}()
 
 	router.Run(":8080")
