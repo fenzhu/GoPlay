@@ -13,6 +13,7 @@ func NewRouter() *gin.Engine {
 
 	router.POST("/seckill", SeckillHandler)
 	router.GET("/products", GetProductsHandler)
+	router.GET("/product/:id", GetProductHandler)
 
 	// Admin routes
 	adminGroup := router.Group("/admin")

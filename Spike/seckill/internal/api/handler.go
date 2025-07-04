@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"seckill/internal/service"
+
+	"github.com/gin-gonic/gin"
 )
 
 func SeckillHandler(c *gin.Context) {
@@ -28,6 +29,16 @@ func GetProductsHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, products)
+}
+
+func GetProductHandler(c *gin.Context) {
+	product, err := service.GetProduct(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, product)
 }
 
 func AdminResetHandler(c *gin.Context) {

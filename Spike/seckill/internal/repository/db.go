@@ -3,9 +3,9 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"seckill/internal/model"
 
 	_ "github.com/go-sql-driver/mysql"
-	"seckill/internal/model"
 )
 
 var DB *sql.DB
@@ -29,7 +29,7 @@ func InitDB(config map[string]interface{}) error {
 	return DB.Ping()
 }
 
-func GetAllProducts() ([]model.Product, error) {
+func GetAllDBProducts() ([]model.Product, error) {
 	rows, err := DB.Query("SELECT id, name, stock FROM products")
 	if err != nil {
 		return nil, err

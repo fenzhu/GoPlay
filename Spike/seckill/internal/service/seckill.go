@@ -61,16 +61,16 @@ func getSeckillScriptSHA() (string, error) {
 }
 
 // runSeckillScript 封装 EvalSha+Eval+ScriptLoad 的兜底逻辑
-func runSeckillScript(productStockKey string) (int64, error) {
+func runSeckillScript(productKey string) (int64, error) {
 	sha, err := getSeckillScriptSHA()
 	if err != nil {
 		return 0, err
 	}
-	result, err := repository.RDB.EvalSha(context.Background(), sha, []string{productStockKey}, 1).Result()
+	result, err := repository.RDB.EvalSha(context.Background(), sha, []string{productKey}, 1).Result()
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "NOSCRIPT") {
 			// Eval 兜底
-			result, err = repository.RDB.Eval(context.Background(), seckillScript, []string{productStockKey}, 1).Result()
+			result, err = repository.RDB.Eval(context.Background(), seckillScript, []string{productKey}, 1).Result()
 			if err != nil {
 				return 0, err
 			}
@@ -87,9 +87,9 @@ func runSeckillScript(productStockKey string) (int64, error) {
 }
 
 func Seckill(productID, userID int64) error {
-	productStockKey := "product:" + strconv.FormatInt(productID, 10) + ":stock"
+	productKey := "product:" + strconv.FormatInt(productID, 10) + ":stock"
 
-	scriptResult, err := runSeckillScript(productStockKey)
+	scriptResult, err := runSeckillScript(productKey)
 	if err != nil {
 		return err
 	}
@@ -125,24 +125,37 @@ func Seckill(productID, userID int64) error {
 }
 
 func SyncProductStockToRedis() error {
-	products, err := repository.GetAllProducts()
+	products, err := repository.GetAllDBProducts()
 	if err != nil {
 		return err
 	}
 
 	for _, p := range products {
-		key := "product:" + strconv.FormatInt(p.ID, 10) + ":stock"
-		val := strconv.FormatInt(p.Stock, 10)
-		_, err := repository.RDB.Set(context.Background(), key, val, 0).Result()
-		if err != nil {
-			return err
+		key := "product:" + strconv.FormatInt(p.ID, 10)
+
+		cmd := repository.RDB.HSet(context.Background(), key, "id", p.ID, "name", p.Name)
+		if cmd.Err() != nil {
+			return cmd.Err()
 		}
+
+		stockKey := key + ":stock"
+
+		scmd := repository.RDB.Set(context.Background(), stockKey, p.Stock, 0)
+		if scmd.Err() != nil {
+			return scmd.Err()
+		}
+
+		repository.RDB.SAdd(context.Background(), "products", p.ID)
 	}
 	return nil
 }
 
 func GetAllProducts() ([]model.Product, error) {
 	return repository.GetAllProducts()
+}
+
+func GetProduct(id string) (map[string]string, error) {
+	return repository.GetProduct(id)
 }
 
 func ResetSystem() error {
