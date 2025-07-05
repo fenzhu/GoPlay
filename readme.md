@@ -10,3 +10,11 @@
 
 2. /albums/:id
 - get, get an album by id
+
+
+sudo tee /etc/docker/daemon.json <<EOF
+{
+  "registry-mirrors": [
+    "https://docker.m.daocloud.io"
+  ]
+}
