@@ -5,9 +5,13 @@ import (
 	"sync"
 )
 
-const limit = 100
-
 func main() {
+	PrintWorker()
+}
+
+func PrintWorker() {
+	const limit = 100
+
 	// WaitGroup 用来等待两个协程执行结束
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -42,8 +46,3 @@ func main() {
 	wg.Wait() // 等待所有协程执行完毕
 	fmt.Println("done")
 }
-
-//  协程原理
-//  垃圾回收原理
-// 	map原理，是否支持并发
-//  chan 原理
