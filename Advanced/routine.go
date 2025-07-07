@@ -11,6 +11,9 @@ func main() {
 	PrintWorker()
 	SliceMemory()
 	MemoryLeak()
+
+	map_concurrent_read()
+	// MapWriteRace()
 }
 
 func PrintWorker() {
